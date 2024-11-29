@@ -89,20 +89,16 @@ class CityscapesDataset(Dataset):
         image = Image.open(self.images[idx]).convert("RGB")
         mask = Image.open(self.annotations[idx])
 
-        # Resize and normalize
-        if self.image_processor:
-            image = self.image_processor(image)
+        # Apply optional transformations
         if self.transform:
             image, mask = self.transform(image, mask)
 
-        # Map labels to a contiguous range (e.g., 0-19 for Cityscapes classes)
-        mask = torch.tensor(np.array(mask), dtype=torch.long)
-        mask[mask == 255] = -1  # Ignore index for undefined regions
+        # Use the image processor to resize and normalize
+        processed = self.image_processor(images=image, segmentation_maps=mask, return_tensors="pt")
+        pixel_values = processed["pixel_values"].squeeze(0)  # Remove batch dimension
+        labels = processed["labels"].squeeze(0)  # Remove batch dimension
 
-        return {
-            "pixel_values": transforms.ToTensor()(image),
-            "labels": mask,
-        }
+        return {"pixel_values": pixel_values, "labels": labels}
 
 
 def main():
