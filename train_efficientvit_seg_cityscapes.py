@@ -125,9 +125,9 @@ class CityscapesDataset(Dataset):
 class CityscapesTransforms:
     def __call__(self, image, label):
         # Resize to a fixed size for uniform input
-        resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
-        image = resize(image)
-        label = resize(label)
+        # resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
+        image = cv2.resize(image, dsize=(512, 1024), interpolation=cv2.INTER_CUBIC)
+        label = cv2.resize(label, dsize=(512, 1024), interpolation=cv2.INTER_CUBIC)
 
         # Apply random horizontal flip
         if torch.rand(1).item() > 0.5:
