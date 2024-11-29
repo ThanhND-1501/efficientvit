@@ -44,13 +44,27 @@ def compute_metrics(preds, labels, num_classes=7):
 
 class SegmentationTransforms:
     def __init__(self):
-        self.transforms = transforms.Compose([
+        """
+        Initialize transformations for the image only.
+        Add any additional image-specific transformations here.
+        """
+        self.image_transforms = transforms.Compose([
             transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
         ])
 
-    def __call__(self, image, mask):
-        image = self.transforms(image)
+    def __call__(self, image, mask=None):
+        """
+        Apply transformations to the image. Mask transformations (if any) can be added here.
+        Args:
+            image (PIL.Image.Image): Input image.
+            mask (Optional[PIL.Image.Image]): Segmentation mask (if needed).
+        Returns:
+            Tuple[PIL.Image.Image, PIL.Image.Image]: Transformed image and mask.
+        """
+        image = self.image_transforms(image)
+        # Currently, no transformations for the mask
         return image, mask
+
 
 import numpy as np
 
@@ -134,19 +148,19 @@ class CityscapesDataset(Dataset):
     def __getitem__(self, idx):
         image = Image.open(self.images[idx]).convert("RGB")
         mask = Image.open(self.annotations[idx])
-
-        # Apply optional transformations on the PIL image (but not the mask)
+    
+        # Apply optional transformations
         if self.transform:
-            image = self.transform(image)
-        
+            image, mask = self.transform(image, mask)  # Now works with the updated `SegmentationTransforms`
+    
         # Remap labels to contiguous range
         mask = self.remap_labels(mask)
-
+    
         # Use the image processor to resize and normalize
         processed = self.image_processor(images=image, segmentation_maps=mask, return_tensors="pt")
         pixel_values = processed["pixel_values"].squeeze(0)  # Remove batch dimension
         labels = processed["labels"].squeeze(0)  # Remove batch dimension
-
+    
         return {"pixel_values": pixel_values, "labels": labels}
 
 def main():
