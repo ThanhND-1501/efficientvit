@@ -27,6 +27,52 @@ def compute_metrics(preds, labels, num_classes=19):
     accuracy = accuracy_score(labels_flat, preds_flat)
     return iou, accuracy
 
+class Resize(object):
+    def __init__(
+        self,
+        crop_size: Optional[tuple[int, int]],
+        interpolation: Optional[int] = cv2.INTER_CUBIC,
+    ):
+        self.crop_size = crop_size
+        self.interpolation = interpolation
+
+    def __call__(self, feed_dict: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        if self.crop_size is None or self.interpolation is None:
+            return feed_dict
+
+        image, target = feed_dict["image"], feed_dict["label"]
+        height, width = self.crop_size
+
+        h, w, _ = image.shape
+        if width != w or height != h:
+            image = cv2.resize(
+                image,
+                dsize=(width, height),
+                interpolation=self.interpolation,
+            )
+        return {
+            "image": image,
+            "label": target,
+        }
+
+
+class ToTensor(object):
+    def __init__(self, mean, std, inplace=False):
+        self.mean = mean
+        self.std = std
+        self.inplace = inplace
+
+    def __call__(self, feed_dict: dict[str, np.ndarray]) -> dict[str, torch.Tensor]:
+        image, mask = feed_dict["image"], feed_dict["label"]
+        image = image.transpose((2, 0, 1))  # (H, W, C) -> (C, H, W)
+        image = torch.as_tensor(image, dtype=torch.float32).div(255.0)
+        mask = torch.as_tensor(mask, dtype=torch.int64)
+        image = F.normalize(image, self.mean, self.std, self.inplace)
+        return {
+            "image": image,
+            "label": mask,
+        }
+
 # Dataset class
 class CityscapesDataset(Dataset):
     """
@@ -127,8 +173,14 @@ class CityscapesTransforms:
     def __call__(self, image, label):
         # Resize to a fixed size for uniform input
         # resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
-        image = cv2.resize(image, dsize=(512, 1024), interpolation=cv2.INTER_CUBIC)
-        label = cv2.resize(label, dsize=(512, 1024), interpolation=cv2.INTER_CUBIC)
+        transform_size_tensor = transforms.Compose(
+            [
+                Resize(crop_size),
+                ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
+        feed_dict = transform_size_tensor({'image':image, 'label':label})
+        image, label = feed_dict['image'], feed_dict['label']
 
         # Apply random horizontal flip
         if torch.rand(1).item() > 0.5:
