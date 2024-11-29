@@ -54,6 +54,8 @@ class SegmentationTransforms:
 
 import numpy as np
 
+import numpy as np
+
 class CityscapesDataset(Dataset):
     """Cityscapes semantic segmentation dataset."""
 
@@ -133,11 +135,11 @@ class CityscapesDataset(Dataset):
         image = Image.open(self.images[idx]).convert("RGB")
         mask = Image.open(self.annotations[idx])
 
-        # Apply optional transformations
+        # Apply optional transformations on the PIL image (but not the mask)
         if self.transform:
-            image, mask = self.transform(image, mask)
-
-        # Remap labels to a contiguous range
+            image = self.transform(image)
+        
+        # Remap labels to contiguous range
         mask = self.remap_labels(mask)
 
         # Use the image processor to resize and normalize
