@@ -15,6 +15,7 @@ from tqdm import tqdm
 from sklearn.metrics import jaccard_score, accuracy_score
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
+import numpy as np
 
 # Custom functions
 def compute_metrics(preds, labels, num_classes=19):
