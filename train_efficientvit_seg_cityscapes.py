@@ -83,31 +83,23 @@ class CityscapesDataset(Dataset):
             6: -1,  # "ground" -> ignore
             7: 0,   # "road"
             8: 1,   # "sidewalk"
-            9: -1,   # "building"
-            10: -1,  # "wall"
-            11: 2,  # "fence"
-            12: 3,  # "pole"
-            13: 4,  # "traffic light"
-            14: -1,  # "traffic sign"
-            15: -1,  # "vegetation"
-            16: -1,  # "terrain"
-            17: 5, # "sky"
-            18: -1, # "person"
-            19: 6, # "rider"
-            20: 7, # "car"
-            21: 8, # "truck"
-            22: 9, # "bus"
-            23: 10, # "train"
-            24: 11, # "motorcycle"
-            25: 12, # "bicycle"
-            26: 13,
-            27: 14,
-            28: 15,
-            29: -1,
-            30: -1,
-            31: 16,
-            32: 17,
-            33: 18,
+            9: 2,   # "building"
+            10: 3,  # "wall"
+            11: 4,  # "fence"
+            12: 5,  # "pole"
+            13: 6,  # "traffic light"
+            14: 7,  # "traffic sign"
+            15: 8,  # "vegetation"
+            16: 9,  # "terrain"
+            17: 10, # "sky"
+            18: 11, # "person"
+            19: 12, # "rider"
+            20: 13, # "car"
+            21: 14, # "truck"
+            22: 15, # "bus"
+            23: 16, # "train"
+            24: 17, # "motorcycle"
+            25: 18, # "bicycle"
             -1: -1, # Ignore any other invalid regions
             255: -1  # Standard ignore index in Cityscapes
         }
