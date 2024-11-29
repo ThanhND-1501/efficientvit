@@ -189,8 +189,8 @@ class CityscapesTransforms:
             label = transforms.functional.hflip(label)
 
         # Convert image to tensor and normalize
-        image = transforms.ToTensor()(image)
-        image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
+        # image = transforms.ToTensor()(image)
+        # image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
 
         # Convert label to NumPy and then to tensor
         label = torch.tensor(np.array(label), dtype=torch.long)
