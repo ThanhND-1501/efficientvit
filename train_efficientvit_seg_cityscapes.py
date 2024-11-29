@@ -16,6 +16,7 @@ from sklearn.metrics import jaccard_score, accuracy_score
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
+from typing import Any, Optional
 
 # Custom functions
 def compute_metrics(preds, labels, num_classes=19):
@@ -32,6 +33,46 @@ class CityscapesDataset(Dataset):
     Images and labels are organized as per the official Cityscapes directory structure.
     """
 
+    label_map = np.array(
+        (
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            0,  # road 7
+            1,  # sidewalk 8
+            -1,
+            -1,
+            2,  # building 11
+            3,  # wall 12
+            4,  # fence 13
+            -1,
+            -1,
+            -1,
+            5,  # pole 17
+            -1,
+            6,  # traffic light 19
+            7,  # traffic sign 20
+            8,  # vegetation 21
+            9,  # terrain 22
+            10,  # sky 23
+            11,  # person 24
+            12,  # rider 25
+            13,  # car 26
+            14,  # truck 27
+            15,  # bus 28
+            -1,
+            -1,
+            16,  # train 31
+            17,  # motorcycle 32
+            18,  # bicycle 33
+        )
+    )
+
+    
     def __init__(self, root_dir, split="train", transform=None):
         """
         Args:
@@ -50,6 +91,7 @@ class CityscapesDataset(Dataset):
         # Gather all image paths
         self.images = []
         self.labels = []
+        self.samples = []
         for city in os.listdir(self.img_dir):
             city_img_dir = os.path.join(self.img_dir, city)
             city_ann_dir = os.path.join(self.ann_dir, city)
@@ -59,6 +101,7 @@ class CityscapesDataset(Dataset):
                     label_path = os.path.join(city_ann_dir, file_name.replace("_leftImg8bit.png", "_gtFine_labelIds.png"))
                     self.images.append(img_path)
                     self.labels.append(label_path)
+                    self.samples.append((img_path, label_path))
 
         assert len(self.images) == len(self.labels), "Mismatch between images and labels!"
 
@@ -67,8 +110,9 @@ class CityscapesDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load image and label
-        image = Image.open(self.images[idx]).convert("RGB")
-        label = Image.open(self.labels[idx])
+        image = np.array(Image.open(self.images[idx]).convert("RGB"))
+        label = np.array(Image.open(self.labels[idx]))
+        label = self.label_map[label]
 
         # Apply transformations
         if self.transform:
