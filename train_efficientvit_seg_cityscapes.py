@@ -52,21 +52,25 @@ class SegmentationTransforms:
         image = self.transforms(image)
         return image, mask
 
+import numpy as np
+
 class CityscapesDataset(Dataset):
     """Cityscapes semantic segmentation dataset."""
 
-    def __init__(self, root_dir, split='train', image_processor=None, transform=None):
+    def __init__(self, root_dir, split='train', image_processor=None, transform=None, num_classes=20):
         """
         Args:
             root_dir (str): Root directory of Cityscapes dataset.
             split (str): Dataset split to use ('train', 'val', or 'test').
             image_processor (SegformerImageProcessor): Processor for resizing and normalizing images.
             transform (callable): Additional transforms to apply to images and masks.
+            num_classes (int): Number of valid segmentation classes.
         """
         self.root_dir = root_dir
         self.split = split
         self.image_processor = image_processor
         self.transform = transform
+        self.num_classes = num_classes
 
         # Directories for images and ground truth
         self.img_dir = os.path.join(root_dir, 'leftImg8bit', split)
@@ -92,6 +96,10 @@ class CityscapesDataset(Dataset):
         # Apply optional transformations
         if self.transform:
             image, mask = self.transform(image, mask)
+
+        # Map labels to a contiguous range [0, num_classes-1]
+        mask = np.array(mask, dtype=np.int64)
+        mask[mask == 255] = -1  # Ignore undefined regions
 
         # Use the image processor to resize and normalize
         processed = self.image_processor(images=image, segmentation_maps=mask, return_tensors="pt")
