@@ -73,9 +73,6 @@ class CityscapesDataset(Dataset):
         if self.transform:
             image, label = self.transform(image, label)
 
-        # Convert label to tensor (after transforming)
-        label = torch.tensor(np.array(label), dtype=torch.long)
-
         return {"image": image, "label": label}
 
 
@@ -96,8 +93,9 @@ class CityscapesTransforms:
         image = transforms.ToTensor()(image)
         image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
 
-        # Convert label to tensor
-        label = torch.tensor(label, dtype=torch.long)
+        # Convert label to NumPy and then to tensor
+        label = torch.tensor(np.array(label), dtype=torch.long)
+
         return image, label
 
 # Main training script
