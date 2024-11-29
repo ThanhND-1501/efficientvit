@@ -73,7 +73,10 @@ class CityscapesDataset(Dataset):
         if self.transform:
             image, label = self.transform(image, label)
 
-        return {"image": image, "label": torch.tensor(label, dtype=torch.long)}
+        # Convert label to tensor (after transforming)
+        label = torch.tensor(np.array(label), dtype=torch.long)
+
+        return {"image": image, "label": label}
 
 
 # Transformations
