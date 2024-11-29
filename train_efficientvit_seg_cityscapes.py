@@ -11,6 +11,7 @@ import torch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import transforms
+import torchvision.transforms.functional as F
 from tqdm import tqdm
 from sklearn.metrics import jaccard_score, accuracy_score
 from datetime import datetime
