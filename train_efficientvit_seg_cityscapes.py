@@ -25,40 +25,75 @@ def compute_metrics(preds, labels, num_classes=19):
     return iou, accuracy
 
 # Dataset class
-class SemanticSegmentationDataset(Dataset):
-    def __init__(self, root_dir, transform=None, train=True):
-        sub_path = "train" if train else "val"
-        self.img_dir = os.path.join(root_dir, "leftImg8bit", sub_path)
-        self.ann_dir = os.path.join(root_dir, "gtFine", sub_path)
+class CityscapesDataset(Dataset):
+    """
+    Cityscapes semantic segmentation dataset.
+    Images and labels are organized as per the official Cityscapes directory structure.
+    """
+
+    def __init__(self, root_dir, split="train", transform=None):
+        """
+        Args:
+            root_dir (str): Root directory of the Cityscapes dataset.
+            split (str): Dataset split - 'train', 'val', or 'test'.
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+        self.root_dir = root_dir
+        self.split = split
         self.transform = transform
 
-        self.images = sorted(os.listdir(self.img_dir))
-        self.annotations = sorted(os.listdir(self.ann_dir))
-        assert len(self.images) == len(self.annotations), "Images and annotations mismatch!"
+        # File paths for images and labels
+        self.img_dir = os.path.join(root_dir, "leftImg8bit", split)
+        self.ann_dir = os.path.join(root_dir, "gtFine", split)
+
+        # Gather all image paths
+        self.images = []
+        self.labels = []
+        for city in os.listdir(self.img_dir):
+            city_img_dir = os.path.join(self.img_dir, city)
+            city_ann_dir = os.path.join(self.ann_dir, city)
+            for file_name in os.listdir(city_img_dir):
+                if file_name.endswith("_leftImg8bit.png"):
+                    img_path = os.path.join(city_img_dir, file_name)
+                    label_path = os.path.join(city_ann_dir, file_name.replace("_leftImg8bit.png", "_gtFine_labelIds.png"))
+                    self.images.append(img_path)
+                    self.labels.append(label_path)
+
+        assert len(self.images) == len(self.labels), "Mismatch between images and labels!"
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        image = Image.open(os.path.join(self.img_dir, self.images[idx]))
-        label = Image.open(os.path.join(self.ann_dir, self.annotations[idx]))
+        # Load image and label
+        image = Image.open(self.images[idx]).convert("RGB")
+        label = Image.open(self.labels[idx])
 
+        # Apply transformations
         if self.transform:
             image, label = self.transform(image, label)
 
         return {"image": image, "label": torch.tensor(label, dtype=torch.long)}
 
+
 # Transformations
-class SegmentationTransforms:
+class CityscapesTransforms:
     def __call__(self, image, label):
+        # Resize to a fixed size for uniform input
+        resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
+        image = resize(image)
+        label = resize(label)
+
         # Apply random horizontal flip
         if torch.rand(1).item() > 0.5:
             image = transforms.functional.hflip(image)
             label = transforms.functional.hflip(label)
 
-        # Convert to tensor and normalize
+        # Convert image to tensor and normalize
         image = transforms.ToTensor()(image)
         image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
+
+        # Convert label to tensor
         label = torch.tensor(label, dtype=torch.long)
         return image, label
 
@@ -74,12 +109,14 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Data loaders
-    train_transforms = SegmentationTransforms()
-    train_dataset = SemanticSegmentationDataset(root_dir, transform=train_transforms, train=True)
-    val_dataset = SemanticSegmentationDataset(root_dir, transform=None, train=False)
+    train_transforms = CityscapesTransforms()
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    train_dataset = CityscapesDataset(root_dir=root_dir, split="train", transform=train_transforms)
+    val_dataset = CityscapesDataset(root_dir=root_dir, split="val", transform=None)
+
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=4)
+
 
     # Model setup
     model = create_seg_model("b2", "cityscapes", pretrained=False)
