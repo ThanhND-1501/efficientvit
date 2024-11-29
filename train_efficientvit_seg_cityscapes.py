@@ -72,6 +72,46 @@ class CityscapesDataset(Dataset):
         self.transform = transform
         self.num_classes = num_classes
 
+        # Define a class mapping to remap Cityscapes IDs to contiguous values
+        self.id_to_train_id = {
+            0: -1,  # "unlabeled" -> ignore
+            1: -1,  # "ego vehicle" -> ignore
+            2: -1,  # "rectification border" -> ignore
+            3: -1,  # "out of roi" -> ignore
+            4: -1,  # "static" -> ignore
+            5: -1,  # "dynamic" -> ignore
+            6: -1,  # "ground" -> ignore
+            7: 0,   # "road"
+            8: 1,   # "sidewalk"
+            9: -1,   # "building"
+            10: -1,  # "wall"
+            11: 2,  # "fence"
+            12: 3,  # "pole"
+            13: 4,  # "traffic light"
+            14: -1,  # "traffic sign"
+            15: -1,  # "vegetation"
+            16: -1,  # "terrain"
+            17: 5, # "sky"
+            18: -1, # "person"
+            19: 6, # "rider"
+            20: 7, # "car"
+            21: 8, # "truck"
+            22: 9, # "bus"
+            23: 10, # "train"
+            24: 11, # "motorcycle"
+            25: 12, # "bicycle"
+            26: 13,
+            27: 14,
+            28: 15,
+            29: -1,
+            30: -1,
+            31: 16,
+            32: 17,
+            33: 18,
+            -1: -1, # Ignore any other invalid regions
+            255: -1  # Standard ignore index in Cityscapes
+        }
+
         # Directories for images and ground truth
         self.img_dir = os.path.join(root_dir, 'leftImg8bit', split)
         self.ann_dir = os.path.join(root_dir, 'gtFine', split)
@@ -86,6 +126,14 @@ class CityscapesDataset(Dataset):
 
         assert len(self.images) == len(self.annotations), "Mismatch between images and annotations."
 
+    def remap_labels(self, mask):
+        """Remap class IDs to training IDs."""
+        mask = np.array(mask, dtype=np.int64)
+        remapped_mask = np.full(mask.shape, fill_value=-1, dtype=np.int64)  # Initialize with ignore_index
+        for id_, train_id in self.id_to_train_id.items():
+            remapped_mask[mask == id_] = train_id
+        return remapped_mask
+
     def __len__(self):
         return len(self.images)
 
@@ -97,9 +145,8 @@ class CityscapesDataset(Dataset):
         if self.transform:
             image, mask = self.transform(image, mask)
 
-        # Map labels to a contiguous range [0, num_classes-1]
-        mask = np.array(mask, dtype=np.int64)
-        mask[mask == 255] = -1  # Ignore undefined regions
+        # Remap labels to a contiguous range
+        mask = self.remap_labels(mask)
 
         # Use the image processor to resize and normalize
         processed = self.image_processor(images=image, segmentation_maps=mask, return_tensors="pt")
@@ -107,7 +154,6 @@ class CityscapesDataset(Dataset):
         labels = processed["labels"].squeeze(0)  # Remove batch dimension
 
         return {"pixel_values": pixel_values, "labels": labels}
-
 
 def main():
     args = parse_arguments()
