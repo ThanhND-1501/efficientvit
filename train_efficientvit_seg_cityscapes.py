@@ -175,7 +175,7 @@ class CityscapesTransforms:
         # resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
         transform_size_tensor = transforms.Compose(
             [
-                Resize(crop_size),
+                Resize((512, 1024)),
                 ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
