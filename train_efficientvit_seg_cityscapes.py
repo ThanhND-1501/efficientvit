@@ -16,6 +16,7 @@ from sklearn.metrics import jaccard_score, accuracy_score
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
+import cv2
 from typing import Any, Optional
 
 # Custom functions
