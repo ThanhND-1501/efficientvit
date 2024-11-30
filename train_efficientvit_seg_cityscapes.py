@@ -205,7 +205,7 @@ if __name__ == "__main__":
     print('ROOT_DIR:', root_dir)
     log_dir = "tensorboard_log_dir"
     batch_size = 8
-    num_epochs = argv[2]
+    num_epochs = int(argv[2])
     num_classes = 20  # Cityscapes has 19 classes
     lr = 0.0006
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
