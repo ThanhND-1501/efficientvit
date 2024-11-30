@@ -216,8 +216,8 @@ if __name__ == "__main__":
     train_dataset = CityscapesDataset(root_dir=root_dir, split="train", transform=transforms_cityscapes)
     val_dataset = CityscapesDataset(root_dir=root_dir, split="val", transform=transforms_cityscapes)
 
-    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
 
     # Model setup
