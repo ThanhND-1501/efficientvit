@@ -19,6 +19,7 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import cv2
 from typing import Any, Optional
+from sys import argv
 
 # Custom functions
 def compute_metrics(preds, labels, num_classes=19):
@@ -200,7 +201,7 @@ class CityscapesTransforms:
 # Main training script
 if __name__ == "__main__":
     # Configuration
-    root_dir = "/kaggle/input/cityscapes-dataset"
+    root_dir = argv[0]
     log_dir = "tensorboard_log_dir"
     batch_size = 4
     num_epochs = 50
