@@ -1,9 +1,7 @@
-# File: semantic_segmentation.py
-# python semantic_segmentation.py --dataset_path ./dataset --output_dir ./outputs --epochs 50 --save_interval 5
-# python semantic_segmentation.py --dataset_path ./dataset --output_dir ./outputs --resume_from ./outputs/latest_checkpoint.pth
-# python semantic_segmentation.py --dataset_path /path/to/Cityscapes --output_dir ./outputs --epochs 50 --batch_size 4
+# !python train_efficientvit_seg_cityscapes.py --data_path --epochs --batch_size --save_dir --save_interval --resume --lr
 import os
 import argparse
+import wandb
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
@@ -29,10 +27,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train a semantic segmentation model.")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset directory.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for training.")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training.")
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
     parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save checkpoints.")
     parser.add_argument("--save_interval", type=int, default=5, help="Interval (in epochs) to save checkpoints.")
-    parser.add_argument("--resume", type=str, help="Path to a checkpoint to resume training from.")
+    parser.add_argument("--resume", type=str, default=False, help="Path to a checkpoint to resume training from.")
     parser.add_argument("--lr", type=float, default=0.0006, help="Learning rate for the optimizer.")
     return parser.parse_args()
 
@@ -286,7 +284,17 @@ if __name__ == "__main__":
 
     # TensorBoard setup
     writer = SummaryWriter(log_dir)
-
+    wandb.init(
+        project="semantic-segmentation",
+        config={
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "learning_rate": args.lr,
+            "save_interval": args.save_interval,
+            "dataset": args.data_path,
+        },
+    )
+    
     # Training loop
     for epoch in range(num_epochs):
         model.train()
@@ -306,6 +314,7 @@ if __name__ == "__main__":
 
         avg_loss = epoch_loss / len(train_loader)
         writer.add_scalar("Loss/Train", avg_loss, epoch)
+        wandb.log({"train_loss": avg_loss, "epoch": epoch})
         print(f"Epoch {epoch + 1}: Loss = {avg_loss:.4f}")
 
         # Validation
@@ -336,9 +345,17 @@ if __name__ == "__main__":
         avg_val_loss = val_loss / len(val_loader)
         avg_val_iou = (interaction.sum / union.sum).cpu().mean().item() * 100
         avg_val_acc = sum(val_accs) / len(val_accs)
+        
         writer.add_scalar("Loss/Val", avg_val_loss, epoch)
         writer.add_scalar("IoU/Val", avg_val_iou, epoch)
         writer.add_scalar("Accuracy/Val", avg_val_acc, epoch)
+
+        wandb.log({
+            "val_loss": avg_val_loss,
+            "val_iou": avg_val_iou,
+            "val_accuracy": avg_val_acc,
+            "epoch": epoch,
+        })
         print(f"Validation: Loss = {avg_val_loss:.4f}, IoU = {avg_val_iou:.4f}, Accuracy = {avg_val_acc:.4f}")
 
         # Adjust learning rate
@@ -348,4 +365,6 @@ if __name__ == "__main__":
         if epoch % args.save_interval == 0:
             checkpoint_path = os.path.join(args.save_dir, f"model_epoch_{epoch}.pth")
             torch.save(model.state_dict(), checkpoint_path)
+            wandb.save(checkpoint_path)
             print(f"Model saved at {checkpoint_path}")
+    wandb.finish()
