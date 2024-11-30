@@ -315,7 +315,6 @@ if __name__ == "__main__":
 
         avg_loss = epoch_loss / len(train_loader)
         writer.add_scalar("Loss/Train", avg_loss, epoch)
-        wandb.log({"train_loss": avg_loss})
         print(f"Epoch {epoch + 1}: Loss = {avg_loss:.4f}")
 
         # Validation
@@ -351,13 +350,15 @@ if __name__ == "__main__":
         writer.add_scalar("IoU/Val", avg_val_iou, epoch)
         writer.add_scalar("Accuracy/Val", avg_val_acc, epoch)
 
+        print(f"Validation: Loss = {avg_val_loss:.4f}, IoU = {avg_val_iou:.4f}, Accuracy = {avg_val_acc:.4f}")
+
         wandb.log({
+            "train_loss": avg_loss,
             "val_loss": avg_val_loss,
             "val_iou": avg_val_iou,
             "val_accuracy": avg_val_acc
         })
-        print(f"Validation: Loss = {avg_val_loss:.4f}, IoU = {avg_val_iou:.4f}, Accuracy = {avg_val_acc:.4f}")
-
+        
         # Adjust learning rate
         scheduler.step(avg_val_loss)
 
