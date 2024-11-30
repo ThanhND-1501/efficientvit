@@ -202,7 +202,7 @@ class CityscapesTransforms:
 if __name__ == "__main__":
     # Configuration
     root_dir = argv[1]
-    print('ROOT_DIR:', roor_dir)
+    print('ROOT_DIR:', root_dir)
     log_dir = "tensorboard_log_dir"
     batch_size = 4
     num_epochs = 50
