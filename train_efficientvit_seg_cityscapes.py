@@ -324,7 +324,7 @@ if __name__ == "__main__":
         val_accs = []
         interaction = AverageMeter(is_distributed=False)
         union = AverageMeter(is_distributed=False)
-        iou = SegIOU(len(dataset.classes))
+        iou = SegIOU(20)
 
         with torch.no_grad():
             for batch in tqdm(val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Validation"):
