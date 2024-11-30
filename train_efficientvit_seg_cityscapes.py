@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
     parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save checkpoints.")
     parser.add_argument("--save_interval", type=int, default=5, help="Interval (in epochs) to save checkpoints.")
-    parser.add_argument("--resume", type=str, default=False, help="Path to a checkpoint to resume training from.")
+    parser.add_argument("--resume", type=str, help="Path to a checkpoint to resume training from.")
     parser.add_argument("--lr", type=float, default=0.0006, help="Learning rate for the optimizer.")
     return parser.parse_args()
 
