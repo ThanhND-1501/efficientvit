@@ -201,7 +201,8 @@ class CityscapesTransforms:
 # Main training script
 if __name__ == "__main__":
     # Configuration
-    root_dir = argv[0]
+    root_dir = argv[1]
+    print('ROOT_DIR:', roor_dir)
     log_dir = "tensorboard_log_dir"
     batch_size = 4
     num_epochs = 50
