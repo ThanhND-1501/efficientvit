@@ -3,6 +3,7 @@
 # python semantic_segmentation.py --dataset_path ./dataset --output_dir ./outputs --resume_from ./outputs/latest_checkpoint.pth
 # python semantic_segmentation.py --dataset_path /path/to/Cityscapes --output_dir ./outputs --epochs 50 --batch_size 4
 import os
+import argparse
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
@@ -22,6 +23,18 @@ from sys import argv
 
 from efficientvit.seg_model_zoo import create_seg_model
 from efficientvit.apps.utils import AverageMeter
+
+# Define command-line arguments
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train a semantic segmentation model.")
+    parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset directory.")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for training.")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training.")
+    parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save checkpoints.")
+    parser.add_argument("--save_interval", type=int, default=5, help="Interval (in epochs) to save checkpoints.")
+    parser.add_argument("--resume", type=str, help="Path to a checkpoint to resume training from.")
+    parser.add_argument("--lr", type=float, default=0.0006, help="Learning rate for the optimizer.")
+    return parser.parse_args()
 
 class SegIOU:
     def __init__(self, num_classes: int, ignore_index: int = -1) -> None:
@@ -236,15 +249,18 @@ class CityscapesTransforms:
 
 # Main training script
 if __name__ == "__main__":
+    args = parse_args()
+    os.makedirs(args.save_dir, exist_ok=True)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     # Configuration
-    root_dir = argv[1]
+    root_dir = args.data_path
     print('ROOT_DIR:', root_dir)
     log_dir = "tensorboard_log_dir"
-    batch_size = int(argv[2])
-    num_epochs = int(argv[3])
+    batch_size = args.batch_size
+    num_epochs = args.epochs
     num_classes = 20  # Cityscapes has 19 classes
-    lr = 0.0006
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    lr = args.lr #0.0006
 
     # Data loaders
     transforms_cityscapes = CityscapesTransforms()
@@ -258,6 +274,9 @@ if __name__ == "__main__":
 
     # Model setup
     model = create_seg_model("b2", "cityscapes", pretrained=False)
+    if args.resume:
+        model.load_state_dict(torch.load(args.resume))
+        print(f"Resumed training from checkpoint: {args.resume}")
     model.to(device)
 
     # Loss and optimizer
@@ -326,6 +345,7 @@ if __name__ == "__main__":
         scheduler.step(avg_val_loss)
 
         # Save model checkpoint
-        checkpoint_path = f"model_epoch_{epoch + 1}_loss_{avg_val_loss:.4f}.pth"
-        torch.save(model.state_dict(), checkpoint_path)
-        print(f"Model saved at {checkpoint_path}")
+        if epoch % args.save_interval == 0:
+            checkpoint_path = os.path.join(args.save_dir, f"model_epoch_{epoch}.pth")
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"Model saved at {checkpoint_path}")
