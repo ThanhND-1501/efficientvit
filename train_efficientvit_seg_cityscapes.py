@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
         avg_loss = epoch_loss / len(train_loader)
         writer.add_scalar("Loss/Train", avg_loss, epoch)
-        wandb.log({"train_loss": avg_loss, "epoch": epoch})
+        wandb.log({"train_loss": avg_loss})
         print(f"Epoch {epoch + 1}: Loss = {avg_loss:.4f}")
 
         # Validation
@@ -354,8 +354,7 @@ if __name__ == "__main__":
         wandb.log({
             "val_loss": avg_val_loss,
             "val_iou": avg_val_iou,
-            "val_accuracy": avg_val_acc,
-            "epoch": epoch,
+            "val_accuracy": avg_val_acc
         })
         print(f"Validation: Loss = {avg_val_loss:.4f}, IoU = {avg_val_iou:.4f}, Accuracy = {avg_val_acc:.4f}")
 
@@ -364,7 +363,7 @@ if __name__ == "__main__":
 
         # Save model checkpoint
         if epoch % args.save_interval == 0:
-            checkpoint_path = os.path.join(args.save_dir, f"model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
+            checkpoint_path = os.path.join(args.save_dir, f"model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
             torch.save(model.state_dict(), checkpoint_path)
             wandb.save(checkpoint_path)
             print(f"Model saved at {checkpoint_path}")
