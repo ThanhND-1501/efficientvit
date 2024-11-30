@@ -26,6 +26,7 @@ from efficientvit.apps.utils import AverageMeter
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a semantic segmentation model.")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset directory.")
+    parser.add_argument("--model_type", type=str, default="b1", required=True, help="Type of EfficientViT model.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for training.")
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
     parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save checkpoints.")
@@ -271,7 +272,7 @@ if __name__ == "__main__":
 
 
     # Model setup
-    model = create_seg_model("b2", "cityscapes", pretrained=False)
+    model = create_seg_model(args.model_type, "cityscapes", pretrained=False)
     if args.resume:
         model.load_state_dict(torch.load(args.resume))
         print(f"Resumed training from checkpoint: {args.resume}")
