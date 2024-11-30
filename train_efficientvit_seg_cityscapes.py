@@ -211,10 +211,10 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Data loaders
-    transforms = CityscapesTransforms()
+    transforms_cityscapes = CityscapesTransforms()
 
-    train_dataset = CityscapesDataset(root_dir=root_dir, split="train", transform=transforms)
-    val_dataset = CityscapesDataset(root_dir=root_dir, split="val", transform=transforms)
+    train_dataset = CityscapesDataset(root_dir=root_dir, split="train", transform=transforms_cityscapes)
+    val_dataset = CityscapesDataset(root_dir=root_dir, split="val", transform=transforms_cityscapes)
 
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=4)
