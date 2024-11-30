@@ -133,7 +133,7 @@ def efficientvit_seg_b0(dataset: str, **kwargs) -> EfficientViTSeg:
             expand_ratio=4,
             middle_op="mbconv",
             final_expand=4,
-            n_classes=19,
+            n_classes=20,
             **build_kwargs_from_config(kwargs, SegHead),
         )
     else:
@@ -158,7 +158,7 @@ def efficientvit_seg_b1(dataset: str, **kwargs) -> EfficientViTSeg:
             expand_ratio=4,
             middle_op="mbconv",
             final_expand=4,
-            n_classes=19,
+            n_classes=20,
             **build_kwargs_from_config(kwargs, SegHead),
         )
     elif dataset == "ade20k":
@@ -197,7 +197,7 @@ def efficientvit_seg_b2(dataset: str, **kwargs) -> EfficientViTSeg:
             expand_ratio=4,
             middle_op="mbconv",
             final_expand=4,
-            n_classes=19,
+            n_classes=20,
             **build_kwargs_from_config(kwargs, SegHead),
         )
     elif dataset == "ade20k":
@@ -236,7 +236,7 @@ def efficientvit_seg_b3(dataset: str, **kwargs) -> EfficientViTSeg:
             expand_ratio=4,
             middle_op="mbconv",
             final_expand=4,
-            n_classes=19,
+            n_classes=20,
             **build_kwargs_from_config(kwargs, SegHead),
         )
     elif dataset == "ade20k":
@@ -275,7 +275,7 @@ def efficientvit_seg_l1(dataset: str, **kwargs) -> EfficientViTSeg:
             expand_ratio=1,
             middle_op="fmbconv",
             final_expand=None,
-            n_classes=19,
+            n_classes=20,
             act_func="gelu",
             **build_kwargs_from_config(kwargs, SegHead),
         )
@@ -316,7 +316,7 @@ def efficientvit_seg_l2(dataset: str, **kwargs) -> EfficientViTSeg:
             expand_ratio=1,
             middle_op="fmbconv",
             final_expand=None,
-            n_classes=19,
+            n_classes=20,
             act_func="gelu",
             **build_kwargs_from_config(kwargs, SegHead),
         )
