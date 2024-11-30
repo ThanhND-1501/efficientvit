@@ -22,7 +22,7 @@ from typing import Any, Optional
 from sys import argv
 
 # Custom functions
-def compute_metrics(preds, labels, num_classes=19):
+def compute_metrics(preds, labels, num_classes=20):
     preds_flat = preds.flatten()
     labels_flat = labels.flatten()
     iou = jaccard_score(labels_flat, preds_flat, average='macro', labels=range(num_classes))
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     log_dir = "tensorboard_log_dir"
     batch_size = 4
     num_epochs = 50
-    num_classes = 19  # Cityscapes has 19 classes
+    num_classes = 20  # Cityscapes has 19 classes
     lr = 0.0006
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
