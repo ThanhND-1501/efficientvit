@@ -5,7 +5,6 @@
 import os
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-from efficientvit.seg_model_zoo import create_seg_model
 from torch import nn
 import torch
 from torch.optim import AdamW
@@ -21,13 +20,50 @@ import cv2
 from typing import Any, Optional
 from sys import argv
 
+from efficientvit.seg_model_zoo import create_seg_model
+from efficientvit.apps.utils import AverageMeter
+
+class SegIOU:
+    def __init__(self, num_classes: int, ignore_index: int = -1) -> None:
+        self.num_classes = num_classes
+        self.ignore_index = ignore_index
+
+    def __call__(self, outputs: torch.Tensor, targets: torch.Tensor) -> dict[str, torch.Tensor]:
+        outputs = (outputs + 1) * (targets != self.ignore_index)
+        targets = (targets + 1) * (targets != self.ignore_index)
+        intersections = outputs * (outputs == targets)
+
+        outputs = torch.histc(
+            outputs,
+            bins=self.num_classes,
+            min=1,
+            max=self.num_classes,
+        )
+        targets = torch.histc(
+            targets,
+            bins=self.num_classes,
+            min=1,
+            max=self.num_classes,
+        )
+        intersections = torch.histc(
+            intersections,
+            bins=self.num_classes,
+            min=1,
+            max=self.num_classes,
+        )
+        unions = outputs + targets - intersections
+
+        return {
+            "i": intersections,
+            "u": unions,
+        }
+
 # Custom functions
 def compute_metrics(preds, labels, num_classes=20):
     preds_flat = preds.flatten()
     labels_flat = labels.flatten()
-    iou = jaccard_score(labels_flat, preds_flat, average='macro', labels=range(num_classes))
     accuracy = accuracy_score(labels_flat, preds_flat)
-    return iou, accuracy
+    return accuracy
 
 class Resize(object):
     def __init__(
@@ -236,7 +272,7 @@ if __name__ == "__main__":
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0
-        for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{num_epochs}"):
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Training"):
             images = batch["image"].to(device)
             labels = batch["label"].to(device)
 
@@ -256,9 +292,13 @@ if __name__ == "__main__":
         # Validation
         model.eval()
         val_loss = 0
-        val_ious, val_accs = [], []
+        val_accs = []
+        interaction = AverageMeter(is_distributed=False)
+        union = AverageMeter(is_distributed=False)
+        iou = SegIOU(len(dataset.classes))
+
         with torch.no_grad():
-            for batch in val_loader:
+            for batch in tqdm(val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Validation"):
                 images = batch["image"].to(device)
                 labels = batch["label"].to(device)
                 outputs = model(images)
@@ -267,12 +307,15 @@ if __name__ == "__main__":
                 val_loss += loss.item()
 
                 preds = outputs.argmax(dim=1)
-                iou, acc = compute_metrics(preds.cpu().numpy(), labels.cpu().numpy(), num_classes)
-                val_ious.append(iou)
+                stats = iou(preds, labels)
+                interaction.update(stats["i"])
+                union.update(stats["u"])
+                
+                acc = compute_metrics(preds.cpu().numpy(), labels.cpu().numpy(), num_classes)
                 val_accs.append(acc)
 
         avg_val_loss = val_loss / len(val_loader)
-        avg_val_iou = sum(val_ious) / len(val_ious)
+        avg_val_iou = (interaction.sum / union.sum).cpu().mean().item() * 100
         avg_val_acc = sum(val_accs) / len(val_accs)
         writer.add_scalar("Loss/Val", avg_val_loss, epoch)
         writer.add_scalar("IoU/Val", avg_val_iou, epoch)
