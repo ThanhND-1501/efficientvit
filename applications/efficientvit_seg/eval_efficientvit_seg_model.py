@@ -658,7 +658,7 @@ def main():
         drop_last=False,
     )
 
-    model = create_efficientvit_seg_model(args.model, weight_url=args.weight_url)
+    model = create_seg_model(args.model, weight_url=args.weight_url)
     model = torch.nn.DataParallel(model).cuda()
     model.eval()
 
