@@ -20,7 +20,7 @@ sys.path.append(ROOT_DIR)
 
 from efficientvit.apps.utils import AverageMeter
 from efficientvit.models.utils import resize
-from efficientvit.seg_model_zoo import create_efficientvit_seg_model
+from efficientvit.seg_model_zoo import create_seg_model
 
 
 class Resize(object):
