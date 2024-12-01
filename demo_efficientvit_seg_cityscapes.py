@@ -15,7 +15,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
 sys.path.append(ROOT_DIR)
 
 from efficientvit.models.utils import resize
-from efficientvit.seg_model_zoo import create_efficientvit_seg_model
+from efficientvit.seg_model_zoo import create_seg_model
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
         raise NotImplementedError
     data = transform({"data": data, "label": np.ones_like(data)})["data"]
 
-    model = create_efficientvit_seg_model(args.model, weight_url=args.weight_url).cuda()
+    model = create_efficientvit_model(args.model, weight_url=args.weight_url).cuda()
     model.eval()
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
