@@ -66,7 +66,7 @@ def main():
         raise NotImplementedError
     data = transform({"data": data, "label": np.ones_like(data)})["data"]
 
-    model = create_efficientvit_model(args.model, weight_url=args.weight_url).cuda()
+    model = create_seg_model(args.model, weight_url=args.weight_url).cuda()
     model.eval()
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
