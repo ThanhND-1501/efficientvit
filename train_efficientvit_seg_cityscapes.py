@@ -300,6 +300,7 @@ if __name__ == "__main__":
     best_acc = 0
     best_ckpt_path = ''
     last_ckpt_path = ''
+    os.makedirs(os.path.join(args.save_dir, 'ckpt_interval'), exist_ok=True)
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0
