@@ -367,7 +367,7 @@ if __name__ == "__main__":
 
         # Save model checkpoint
         if best_acc < avg_val_acc:
-            if os.path.exist(best_ckpt_path):
+            if os.path.exists(best_ckpt_path):
                 os.remove(best_ckpt_path)
             best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
             torch.save(model.state_dict(), checkpoint_path)
