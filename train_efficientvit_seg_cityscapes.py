@@ -297,6 +297,9 @@ if __name__ == "__main__":
     )
     
     # Training loop
+    best_acc = 0
+    best_ckpt_path = ''
+    last_ckpt_path = ''
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0
@@ -323,7 +326,7 @@ if __name__ == "__main__":
         val_accs = []
         interaction = AverageMeter(is_distributed=False)
         union = AverageMeter(is_distributed=False)
-        iou = SegIOU(20)
+        iou = SegIOU(20, ignore_index=19)
 
         with torch.no_grad():
             for batch in tqdm(val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Validation"):
@@ -363,9 +366,19 @@ if __name__ == "__main__":
         scheduler.step(avg_val_loss)
 
         # Save model checkpoint
+        if best_acc < avg_val_acc:
+            if os.path.exist(best_ckpt_path):
+                os.remove(best_ckpt_path)
+            best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"Best model saved at {checkpoint_path}")
         if epoch % args.save_interval == 0:
-            checkpoint_path = os.path.join(args.save_dir, f"model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
+            checkpoint_path = os.path.join(args.save_dir, 'ckpt_interval', f"model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
             torch.save(model.state_dict(), checkpoint_path)
             wandb.save(checkpoint_path)
-            print(f"Model saved at {checkpoint_path}")
+            print(f"Model periodically saved at {checkpoint_path}")
+        if os.path.exists(last_ckpt_path):
+            os.remove(last_ckpt_path)
+        last_ckpt_path = os.path.join(args.save_dir, f"last_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
+        torch.save(model.state_dict(), last_ckpt_path)
     wandb.finish()
