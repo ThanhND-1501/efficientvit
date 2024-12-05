@@ -370,12 +370,11 @@ if __name__ == "__main__":
             if os.path.exists(best_ckpt_path):
                 os.remove(best_ckpt_path)
             best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
-            torch.save(model.state_dict(), checkpoint_path)
-            print(f"Best model saved at {checkpoint_path}")
+            torch.save(model.state_dict(), best_ckpt_path)
+            print(f"Best model saved at {best_ckpt_path}")
         if epoch % args.save_interval == 0:
             checkpoint_path = os.path.join(args.save_dir, 'ckpt_interval', f"model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
             torch.save(model.state_dict(), checkpoint_path)
-            wandb.save(checkpoint_path)
             print(f"Model periodically saved at {checkpoint_path}")
         if os.path.exists(last_ckpt_path):
             os.remove(last_ckpt_path)
