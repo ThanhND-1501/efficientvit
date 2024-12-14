@@ -64,40 +64,40 @@ class CityscapesDataset(Dataset):
 
     label_map = np.array(
         (
-            19,
-            19,
-            19,
-            19,
-            19,
-            19,
-            19,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
+            16,
             0,  # road 7
             1,  # sidewalk 8
-            19,
-            19,
+            16,
+            16,
             2,  # building 11
-            3,  # wall 12
-            4,  # fence 13
-            19,
-            19,
-            19,
-            5,  # pole 17
-            19,
-            6,  # traffic light 19
-            7,  # traffic sign 20
-            8,  # vegetation 21
-            9,  # terrain 22
-            10,  # sky 23
-            11,  # person 24
-            12,  # rider 25
-            13,  # car 26
-            14,  # truck 27
-            15,  # bus 28
-            19,
-            19,
-            16,  # train 31
-            17,  # motorcycle 32
-            18,  # bicycle 33
+            2,  # wall 12
+            2,  # fence 13
+            16,
+            16,
+            16,
+            3,  # pole 17
+            16,
+            4,  # traffic light 19
+            5,  # traffic sign 20
+            6,  # vegetation 21
+            6,  # terrain 22
+            7,  # sky 23
+            8,  # person 24
+            9,  # rider 25
+            10,  # car 26
+            11,  # truck 27
+            12,  # bus 28
+            16,
+            16,
+            13,  # train 31
+            14,  # motorcycle 32
+            15,  # bicycle 33
         )
     )
 

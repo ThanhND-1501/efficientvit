@@ -1,4 +1,4 @@
-# !python train_efficientvit_seg_cityscapes.py --data_path --epochs --batch_size --save_dir --save_interval --resume --lr
+# !python train_mobilevit_seg_cityscapes.py --data_path --epochs --batch_size --save_dir --save_interval --resume --lr
 import os
 import argparse
 import wandb
@@ -110,7 +110,7 @@ def main():
         val_accs = []
         interaction = AverageMeter(is_distributed=False)
         union = AverageMeter(is_distributed=False)
-        iou = SegIOU(20, ignore_index=19)
+        iou = SegIOU(17, ignore_index=16)
 
         with torch.no_grad():
             for batch in tqdm(val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Validation"):
