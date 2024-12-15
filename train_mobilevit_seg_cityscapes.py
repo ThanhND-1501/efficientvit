@@ -3,7 +3,7 @@ import os
 import argparse
 import wandb
 
-from dataset import *
+from cityscapes_pt import *
 from utils import *
 from efficientvit.apps.utils import AverageMeter
 
@@ -16,12 +16,13 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 from transformers import MobileViTForImageClassification
+from datasets import Dataset as HFDataset
 
 # Define command-line arguments
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a semantic segmentation model.")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset directory.")
-    parser.add_argument("--model_type", type=str, default="b1", required=True, help="Type of EfficientViT model.")
+    parser.add_argument("--model_type", type=str, default="xx", choices=['x', 'xx'], required=True, help="Type of MobileViT model.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for training.")
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
     parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save checkpoints.")
@@ -55,7 +56,7 @@ def main():
 
 
     # Model setup
-    model = MobileViTForImageClassification.from_pretrained("apple/mobilevit-small")
+    model = MobileViTForImageClassification.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model_type}-small")
     if args.resume:
         model.load_state_dict(torch.load(args.resume))
         print(f"Resumed training from checkpoint: {args.resume}")

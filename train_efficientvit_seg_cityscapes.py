@@ -3,7 +3,7 @@ import os
 import argparse
 import wandb
 
-from dataset import *
+from cityscapes_pt import *
 from utils import *
 from efficientvit.apps.utils import AverageMeter
 from efficientvit.seg_model_zoo import create_seg_model
@@ -20,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a semantic segmentation model.")
     parser.add_argument("--data_path", type=str, required=True, help="Path to the dataset directory.")
-    parser.add_argument("--model_type", type=str, default="b1", required=True, help="Type of EfficientViT model.")
+    parser.add_argument("--model_type", type=str, default="b1", choices=["b0", "b1", "b2"], required=True, help="Type of EfficientViT model.")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for training.")
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size for training.")
     parser.add_argument("--save_dir", type=str, default="./checkpoints", help="Directory to save checkpoints.")
