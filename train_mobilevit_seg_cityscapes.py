@@ -65,7 +65,7 @@ def remap_labels(target):
     )
     target = np.array(target)  # Convert target to numpy array
     target = label_map[target]  # Apply label map
-    return Image.fromarray(target.astype(np.uint8))  # Convert back to PIL Image
+    return torch.tensor(target, dtype=torch.long)
 
 # Main function
 def main():
@@ -95,6 +95,7 @@ def main():
         transform=transform,
         target_transform=target_transform
     )
+    train_dataset.cuda()
 
     val_dataset = Cityscapes(
         root=args.data_path,
@@ -104,6 +105,7 @@ def main():
         transform=transform,
         target_transform=target_transform
     )
+    val_dataset.cuda()
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
