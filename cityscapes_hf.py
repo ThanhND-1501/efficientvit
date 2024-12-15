@@ -10,7 +10,7 @@ class HuggingfaceCityscapes(GeneratorBasedBuilder):
     Hugging Face dataset implementation of Cityscapes.
     """
     def __init__(self):
-        super().__init__()
+        super().__init__(self)
     
     # Dataset metadata
     BUILDER_CONFIGS = [

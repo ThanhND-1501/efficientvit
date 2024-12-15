@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
-from typing import Optional
+from typing import Optional, Union, Tuple
 import torchvision.transforms.functional as F
 
 class Resize(object):
@@ -54,6 +54,37 @@ class ToTensor(object):
             "image": image,
             "label": mask,
         }
+
+# Transformations
+class CityscapesTransforms:
+    def __init__(self, size: Union[Tuple, int]=(512, 1024)):
+        self.size = size
+    
+    def __call__(self, image, label):
+        # Resize to a fixed size for uniform input
+        # resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
+        transform_size_tensor = transforms.Compose(
+            [
+                Resize(self.size),
+                ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
+        feed_dict = transform_size_tensor({'image':image, 'label':label})
+        image, label = feed_dict['image'], feed_dict['label']
+
+        # Apply random horizontal flip
+        if torch.rand(1).item() > 0.5:
+            image = transforms.functional.hflip(image)
+            label = transforms.functional.hflip(label)
+
+        # Convert image to tensor and normalize
+        # image = transforms.ToTensor()(image)
+        # image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
+
+        # Convert label to NumPy and then to tensor
+        label = torch.tensor(np.array(label), dtype=torch.long)
+
+        return image, label
 
 # Dataset class
 class CityscapesDataset(Dataset):
@@ -148,32 +179,3 @@ class CityscapesDataset(Dataset):
             image, label = self.transform(image, label)
 
         return {"image": image, "label": label}
-
-
-# Transformations
-class CityscapesTransforms:
-    def __call__(self, image, label):
-        # Resize to a fixed size for uniform input
-        # resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
-        transform_size_tensor = transforms.Compose(
-            [
-                Resize((512, 1024)),
-                ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
-        feed_dict = transform_size_tensor({'image':image, 'label':label})
-        image, label = feed_dict['image'], feed_dict['label']
-
-        # Apply random horizontal flip
-        if torch.rand(1).item() > 0.5:
-            image = transforms.functional.hflip(image)
-            label = transforms.functional.hflip(label)
-
-        # Convert image to tensor and normalize
-        # image = transforms.ToTensor()(image)
-        # image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
-
-        # Convert label to NumPy and then to tensor
-        label = torch.tensor(np.array(label), dtype=torch.long)
-
-        return image, label
