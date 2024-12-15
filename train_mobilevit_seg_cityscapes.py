@@ -1,6 +1,7 @@
 # File: train_deeplabv3_mobilevit_cityscapes.py
 import argparse
 import os
+import wandb
 
 from utils import *
 from efficientvit.apps.utils import AverageMeter
@@ -169,6 +170,17 @@ def main():
                 val_accs.append(acc)
                 
         return total_loss/len(loader), sum(val_accs)/len(val_accs)
+    
+    wandb.init(
+        project="semantic-segmentation",
+        config={
+            "epochs": args.epochs,
+            "batch_size": args.batch_size,
+            "learning_rate": args.lr,
+            "save_interval": args.save_interval,
+            "dataset": args.data_path,
+        },
+    )
 
     # Training Loop
     os.makedirs(args.save_dir, exist_ok=True)
@@ -190,6 +202,13 @@ def main():
         scheduler.step(val_loss)
         print(f"Epoch {epoch + 1}/{args.epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
+        wandb.log({
+            "train_loss": train_loss,
+            "val_loss": val_loss,
+            "val_iou": val_iou,
+            "val_accuracy": val_acc
+        })
+        
         # Save model checkpoint
         if best_acc < val_acc:
             best_acc = val_acc
@@ -206,6 +225,7 @@ def main():
             os.remove(last_ckpt_path)
         last_ckpt_path = os.path.join(args.save_dir, f"last_model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
         torch.save(model.state_dict(), last_ckpt_path)
-
+    wandb.finish()
+    
 if __name__ == "__main__":
     main()
