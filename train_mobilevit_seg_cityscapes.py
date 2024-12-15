@@ -95,7 +95,6 @@ def main():
         transform=transform,
         target_transform=target_transform
     )
-    train_dataset.cuda()
 
     val_dataset = Cityscapes(
         root=args.data_path,
@@ -105,7 +104,6 @@ def main():
         transform=transform,
         target_transform=target_transform
     )
-    val_dataset.cuda()
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
