@@ -118,8 +118,9 @@ def main():
 
     # Update classifier head for the new label map
     if model.config.num_labels != NUM_CLASSES:
+        input_channels = model.segmentation_head.classifier.weight.shape[1]
         model.segmentation_head.classifier = nn.Conv2d(
-            in_channels=model.segmentation_head.classifier.in_channels,
+            in_channels=input_channels,
             out_channels=NUM_CLASSES,
             kernel_size=1
         ).to(DEVICE)
