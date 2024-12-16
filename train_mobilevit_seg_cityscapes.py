@@ -158,13 +158,12 @@ def main():
         with torch.no_grad():
             for images, targets in loader:
                 images, targets = images.to(device), targets.squeeze(1).to(device)
-                raw_outputs = model(pixel_values=images)
-                outputs = raw_outputs.logits
+                outputs = model(pixel_values=images).logits
                 outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
                 loss = criterion(outputs, targets)
                 total_loss += loss.item()
                 
-                preds = raw_outputs.argmax(dim=1)
+                preds = outputs.argmax(dim=1)
                 stats = iou(preds, targets)
                 interaction.update(stats["i"])
                 union.update(stats["u"])
