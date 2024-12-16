@@ -143,6 +143,7 @@ def main():
             images, targets = images.to(device), targets.squeeze(1).to(device)
             optimizer.zero_grad()
             outputs = model(pixel_values=images).logits
+            outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -158,6 +159,7 @@ def main():
                 images, targets = images.to(device), targets.squeeze(1).to(device)
                 raw_outputs = model(pixel_values=images)
                 outputs = raw_outputs.logits
+                outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
                 loss = criterion(outputs, targets)
                 total_loss += loss.item()
                 
