@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument("--save_interval", type=int, default=5, help="Interval (in epochs) to save the model")
     parser.add_argument("--resume", type=str, default=None, help="Path to resume a checkpoint")
     parser.add_argument("--lr", type=float, default=0.0006, help="Learning rate for training")
+    parser.add_argument("--early_stop", type=int, default=10, help="Number of epochs to stop when there is no improvement in accuracy.")
     return parser.parse_args()
 
 # Label remapping function
@@ -214,6 +215,7 @@ def main():
         # Save model checkpoint
         if best_acc < val_acc:
             best_acc = val_acc
+            ckpt_epoch = epoch
             if os.path.exists(best_ckpt_path):
                 os.remove(best_ckpt_path)
             best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
@@ -227,6 +229,10 @@ def main():
             os.remove(last_ckpt_path)
         last_ckpt_path = os.path.join(args.save_dir, f"last_model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
         torch.save(model.state_dict(), last_ckpt_path)
+        
+        if epoch - ckpt_epoch > args.early_stop:
+            print(f"Early Stopping at epoch {epoch} because of no improvement after {args.early_stop}")
+            break
     wandb.finish()
     
 if __name__ == "__main__":
