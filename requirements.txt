@@ -18,6 +18,7 @@ wandb[media]
 matplotlib
 huggingface-hub
 transformers
+datasets
 onnx
 onnxsim
 onnxruntime
