@@ -13,8 +13,8 @@ from torch import nn
 import torch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torchvision.datasets import Cityscapes
 from tqdm import tqdm
-from torch.utils.tensorboard import SummaryWriter
 
 # Define command-line arguments
 def parse_args():
@@ -27,27 +27,88 @@ def parse_args():
     parser.add_argument("--save_interval", type=int, default=5, help="Interval (in epochs) to save checkpoints.")
     parser.add_argument("--resume", type=str, help="Path to a checkpoint to resume training from.")
     parser.add_argument("--lr", type=float, default=0.0006, help="Learning rate for the optimizer.")
+    parser.add_argument("--early_stop", type=int, default=10, help="Number of epochs to stop when there is no improvement in accuracy.")
     return parser.parse_args()
+
+# Label remapping function
+def remap_labels(target):
+    """
+    Remap labels using a predefined label map.
+    """
+    label_map = np.array(
+        (
+            15, 15, 15, 15, 15, 15, 15,
+            0,  # road 7
+            1,  # sidewalk 8
+            15, 15,
+            2,  # building 11
+            2,  # wall 12
+            2,  # fence 13
+            15, 15, 15,
+            3,  # pole 17
+            15,
+            4,  # traffic light 19
+            5,  # traffic sign 20
+            6,  # vegetation 21
+            6,  # terrain 22
+            7,  # sky 23
+            8,  # person 24
+            9,  # rider 25
+            10,  # car 26
+            11,  # truck 27
+            11,  # bus 28
+            15, 15,
+            12,  # train 31
+            13,  # motorcycle 32
+            14,  # bicycle 33
+        )
+    )
+    target = np.array(target)  # Convert target to numpy array
+    target = label_map[target]  # Apply label map
+    return torch.tensor(target, dtype=torch.long)
 
 def main():
     args = parse_args()
     os.makedirs(args.save_dir, exist_ok=True)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    NUM_CLASSES = 16  # Based on the label_map (0-15)
     
     # Configuration
     root_dir = args.data_path
-    print('ROOT_DIR:', root_dir)
-    log_dir = "tensorboard_log_dir"
     batch_size = args.batch_size
     num_epochs = args.epochs
-    num_classes = 20  # Cityscapes has 19 classes
     lr = args.lr #0.0006
 
-    # Data loaders
-    transforms_cityscapes = CityscapesTransforms()
+    # Transforms for the dataset
+    transform = transforms.Compose([
+        transforms.Resize((512, 1024)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
 
-    train_dataset = CityscapesDataset(root_dir=root_dir, split="train", transform=transforms_cityscapes)
-    val_dataset = CityscapesDataset(root_dir=root_dir, split="val", transform=transforms_cityscapes)
+    # Target transform with label remapping
+    def target_transform(target):
+        return remap_labels(target)
+
+    # Load Cityscapes dataset
+    train_dataset = Cityscapes(
+        root=root_dir,
+        split="train",
+        mode="fine",
+        target_type="semantic",
+        transform=transform,
+        target_transform=target_transform
+    )
+
+    val_dataset = Cityscapes(
+        root=root_dir,
+        split="val",
+        mode="fine",
+        target_type="semantic",
+        transform=transform,
+        target_transform=target_transform
+    )
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -58,23 +119,59 @@ def main():
     if args.resume:
         model.load_state_dict(torch.load(args.resume))
         print(f"Resumed training from checkpoint: {args.resume}")
-    model.to(device)
+    model.to(DEVICE)
 
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = AdamW(model.parameters(), lr=lr)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=3, verbose=True)
+    
+    # Training and Validation functions
+    def train_one_epoch(model, loader, optimizer, criterion, device):
+        model.train()
+        total_loss = 0
+        for images, targets in loader:
+            images, targets = images.to(device), targets.squeeze(1).to(device)
+            optimizer.zero_grad()
+            outputs = model(pixel_values=images).logits
+            outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        return total_loss / len(loader)
 
-    # TensorBoard setup
-    writer = SummaryWriter(log_dir)
+    def validate(model, loader, criterion, device, interaction, union, iou):
+        model.eval()
+        total_loss = 0
+        val_accs = []
+        with torch.no_grad():
+            for images, targets in loader:
+                images, targets = images.to(device), targets.squeeze(1).to(device)
+                outputs = model(pixel_values=images).logits
+                outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
+                loss = criterion(outputs, targets)
+                total_loss += loss.item()
+                
+                preds = outputs.argmax(dim=1)
+                stats = iou(preds, targets)
+                interaction.update(stats["i"])
+                union.update(stats["u"])
+                
+                acc = compute_metrics(preds.cpu().numpy(), targets.cpu().numpy(), NUM_CLASSES)
+                val_accs.append(acc)
+                
+        return total_loss/len(loader), sum(val_accs)/len(val_accs)
+
+    # Experiment tracking setup
     wandb.init(
         project="semantic-segmentation",
         config={
-            "epochs": args.epochs,
-            "batch_size": args.batch_size,
-            "learning_rate": args.lr,
+            "epochs": num_epochs,
+            "batch_size": batch_size,
+            "learning_rate": lr,
             "save_interval": args.save_interval,
-            "dataset": args.data_path,
+            "dataset": root_dir,
         },
     )
     
@@ -83,74 +180,33 @@ def main():
     best_ckpt_path = ''
     last_ckpt_path = ''
     os.makedirs(os.path.join(args.save_dir, 'ckpt_interval'), exist_ok=True)
+    
     for epoch in range(num_epochs):
-        model.train()
-        epoch_loss = 0
-        for batch in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Training"):
-            images = batch["image"].to(device)
-            labels = batch["label"].to(device)
-
-            optimizer.zero_grad()
-            outputs = model(images)
-            outputs = nn.functional.interpolate(outputs, size=labels.shape[1:], mode="bilinear", align_corners=False)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            epoch_loss += loss.item()
-
-        avg_loss = epoch_loss / len(train_loader)
-        writer.add_scalar("Loss/Train", avg_loss, epoch)
-        print(f"Epoch {epoch + 1}: Loss = {avg_loss:.4f}")
-
-        # Validation
-        model.eval()
-        val_loss = 0
-        val_accs = []
         interaction = AverageMeter(is_distributed=False)
         union = AverageMeter(is_distributed=False)
         iou = SegIOU(17, ignore_index=16)
-
-        with torch.no_grad():
-            for batch in tqdm(val_loader, desc=f"Epoch {epoch + 1}/{num_epochs} - Validation"):
-                images = batch["image"].to(device)
-                labels = batch["label"].to(device)
-                outputs = model(images)
-                outputs = nn.functional.interpolate(outputs, size=labels.shape[1:], mode="bilinear", align_corners=False)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
-
-                preds = outputs.argmax(dim=1)
-                stats = iou(preds, labels)
-                interaction.update(stats["i"])
-                union.update(stats["u"])
-                
-                acc = compute_metrics(preds.cpu().numpy(), labels.cpu().numpy(), num_classes)
-                val_accs.append(acc)
-
-        avg_val_loss = val_loss / len(val_loader)
-        avg_val_iou = (interaction.sum / union.sum).cpu().mean().item() * 100
-        avg_val_acc = sum(val_accs) / len(val_accs)
         
-        writer.add_scalar("Loss/Val", avg_val_loss, epoch)
-        writer.add_scalar("IoU/Val", avg_val_iou, epoch)
-        writer.add_scalar("Accuracy/Val", avg_val_acc, epoch)
+        train_loss = train_one_epoch(model, train_loader, optimizer, criterion, DEVICE)
+        
+        val_loss, val_acc = validate(model, val_loader, criterion, DEVICE, interaction, union, iou)
+        val_iou = (interaction.sum / union.sum).cpu().mean().item() * 100
+        
+        scheduler.step(val_loss)
+        print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
-        print(f"Validation: Loss = {avg_val_loss:.4f}, IoU = {avg_val_iou:.4f}, Accuracy = {avg_val_acc:.4f}")
+        print(f"Validation: Loss = {val_loss:.4f}, IoU = {val_iou:.4f}, Accuracy = {val_acc:.4f}")
 
         wandb.log({
-            "train_loss": avg_loss,
-            "val_loss": avg_val_loss,
-            "val_iou": avg_val_iou,
-            "val_accuracy": avg_val_acc
+            "train_loss": train_loss,
+            "val_loss": val_loss,
+            "val_iou": val_iou,
+            "val_accuracy": val_acc
         })
-        
-        # Adjust learning rate
-        scheduler.step(avg_val_loss)
 
         # Save model checkpoint
-        if best_acc < avg_val_acc:
-            best_acc = avg_val_acc
+        if best_acc < val_acc:
+            best_acc = val_acc
+            ckpt_epoch = epoch
             if os.path.exists(best_ckpt_path):
                 os.remove(best_ckpt_path)
             best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
@@ -164,6 +220,11 @@ def main():
             os.remove(last_ckpt_path)
         last_ckpt_path = os.path.join(args.save_dir, f"last_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
         torch.save(model.state_dict(), last_ckpt_path)
+        
+        if epoch - ckpt_epoch > args.early_stop:
+            print(f"Early Stopping at epoch {epoch} because of no improvement after {args.early_stop}")
+            break
+        
     wandb.finish()
 
 

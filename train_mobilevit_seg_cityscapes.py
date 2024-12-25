@@ -39,16 +39,16 @@ def remap_labels(target):
     """
     label_map = np.array(
         (
-            16, 16, 16, 16, 16, 16, 16,
+            15, 15, 15, 15, 15, 15, 15,
             0,  # road 7
             1,  # sidewalk 8
-            16, 16,
+            15, 15,
             2,  # building 11
             2,  # wall 12
             2,  # fence 13
-            16, 16, 16,
+            15, 15, 15,
             3,  # pole 17
-            16,
+            15,
             4,  # traffic light 19
             5,  # traffic sign 20
             6,  # vegetation 21
@@ -58,11 +58,11 @@ def remap_labels(target):
             9,  # rider 25
             10,  # car 26
             11,  # truck 27
-            12,  # bus 28
-            16, 16,
-            13,  # train 31
-            14,  # motorcycle 32
-            15,  # bicycle 33
+            11,  # bus 28
+            15, 15,
+            12,  # train 31
+            13,  # motorcycle 32
+            14,  # bicycle 33
         )
     )
     target = np.array(target)  # Convert target to numpy array
@@ -75,7 +75,7 @@ def main():
 
     # Configuration
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    NUM_CLASSES = 17  # Based on the label_map (0-15)
+    NUM_CLASSES = 16  # Based on the label_map (0-15)
 
     # Transforms for the dataset
     transform = transforms.Compose([
