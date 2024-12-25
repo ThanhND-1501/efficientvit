@@ -65,7 +65,7 @@ class CityscapesTransforms:
         # resize = transforms.Resize((512, 1024))  # Adjust size as per model's input requirement
         transform_size_tensor = transforms.Compose(
             [
-                transforms.,
+                Resize(self.size),
                 ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
