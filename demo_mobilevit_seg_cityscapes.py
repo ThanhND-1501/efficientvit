@@ -6,9 +6,11 @@ import sys
 import cv2
 import numpy as np
 import torch
-from applications.efficientvit_seg.eval_efficientvit_seg_model import ADE20KDataset, CityscapesDataset, Resize, ToTensor, get_canvas
+#from applications.efficientvit_seg.eval_efficientvit_seg_model import CityscapesDataset, Resize, ToTensor, get_canvas
+from cityscapes_pt import CityscapesDataset, Resize, ToTensor, get_canvas
 from PIL import Image
 from torchvision import transforms
+from transformers import MobileViTConfig, MobileViTForSemanticSegmentation
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
@@ -24,12 +26,13 @@ def main():
     parser.add_argument("--dataset", type=str, default="cityscapes", choices=["cityscapes", "ade20k"])
     parser.add_argument("--gpu", type=str, default="0")
     parser.add_argument("--crop_size", type=int, default=512)
-    parser.add_argument("--model", type=str, default="b0")
+    parser.add_argument("--model", type=str, default="x")
     parser.add_argument("--weight_url", type=str, default=None)
-    parser.add_argument("--output_path", type=str, default=".demo/efficientvit_seg_demo.png")
+    parser.add_argument("--output_path", type=str, default=".demo/mobilevit_seg_demo.png")
 
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     image = np.array(Image.open(args.image_path).convert("RGB"))
     data = image
@@ -41,32 +44,17 @@ def main():
             ]
         )
         class_colors = CityscapesDataset.class_colors
-    elif args.dataset == "ade20k":
-        h, w = image.shape[:2]
-        if h < w:
-            th = args.crop_size
-            tw = math.ceil(w / h * th / 32) * 32
-        else:
-            tw = args.crop_size
-            th = math.ceil(h / w * tw / 32) * 32
-        if th != h or tw != w:
-            data = cv2.resize(
-                image,
-                dsize=(tw, th),
-                interpolation=cv2.INTER_CUBIC,
-            )
-
-        transform = transforms.Compose(
-            [
-                ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
-        class_colors = ADE20KDataset.class_colors
     else:
         raise NotImplementedError
     data = transform({"data": data, "label": np.ones_like(data)})["data"]
 
-    model = create_seg_model(args.model, weight_url=args.weight_url).cuda()
+    # Load the pretrained MobileViT-Small model from HuggingFace
+    config = MobileViTConfig.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model_type}-small")
+    model = MobileViTForSemanticSegmentation.from_pretrained(
+        f"apple/deeplabv3-mobilevit-{args.model_type}-small",
+        config=config
+    )
+    model.to(DEVICE)
     model.eval()
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)

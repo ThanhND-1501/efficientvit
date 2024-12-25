@@ -131,8 +131,27 @@ class CityscapesDataset(Dataset):
             15,  # bicycle 33
         )
     )
-
     
+    class_color = {'road': (128, 64, 128),
+               'sidewalk': (244, 35, 232),
+               'building': (70, 70, 70),
+               'wall': (102, 102, 156),
+               'fence': (190, 153, 153),
+               'pole': (153, 153, 153),
+               'traffic light': (250, 170, 30),
+               'traffic sign': (220, 220, 0),
+               'vegetation': (107, 142, 35),
+               'terrain': (152, 251, 152),
+               'sky': (70, 130, 180),
+               'person': (220, 20, 60),
+               'rider': (255, 0, 0),
+               'car': (0, 0, 142),
+               'truck': (0, 0, 70),
+               'bus': (0, 60, 100),
+               'train': (0, 80, 100),
+               'motorcycle': (0, 0, 230),
+               'bicycle': (119, 11, 32)}
+
     def __init__(self, root_dir, split="train", transform=None):
         """
         Args:
@@ -179,3 +198,20 @@ class CityscapesDataset(Dataset):
             image, label = self.transform(image, label)
 
         return {"image": image, "label": label}
+
+def get_canvas(
+    image: np.ndarray,
+    mask: np.ndarray,
+    colors: tuple | list,
+    opacity=0.5,
+) -> np.ndarray:
+    image_shape = image.shape[:2]
+    mask_shape = mask.shape
+    if image_shape != mask_shape:
+        mask = cv2.resize(mask, dsize=(image_shape[1], image_shape[0]), interpolation=cv2.INTER_NEAREST)
+    seg_mask = np.zeros_like(image, dtype=np.uint8)
+    for k, color in enumerate(colors):
+        seg_mask[mask == k, :] = color
+    canvas = seg_mask * opacity + image * (1 - opacity)
+    canvas = np.asarray(canvas, dtype=np.uint8)
+    return canvas
