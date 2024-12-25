@@ -184,7 +184,7 @@ def main():
     for epoch in range(num_epochs):
         interaction = AverageMeter(is_distributed=False)
         union = AverageMeter(is_distributed=False)
-        iou = SegIOU(17, ignore_index=16)
+        iou = SegIOU(16, ignore_index=15)
         
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, DEVICE)
         
