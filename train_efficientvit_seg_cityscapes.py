@@ -131,10 +131,10 @@ def main():
         model.train()
         total_loss = 0
         for images, targets in loader:
-            images, targets = images.to(device), targets.squeeze(1).to(device)
+            images, targets = images.to(device), targets.to(device)
             optimizer.zero_grad()
             outputs = model(images)
-            outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
+            outputs = nn.functional.interpolate(outputs, size=targets.shape[1:], mode="bilinear", align_corners=False)  # Resize to target size
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
@@ -147,9 +147,9 @@ def main():
         val_accs = []
         with torch.no_grad():
             for images, targets in loader:
-                images, targets = images.to(device), targets.squeeze(1).to(device)
+                images, targets = images.to(device), targets.to(device)
                 outputs = model(images)
-                outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
+                outputs = nn.functional.interpolate(outputs, size=targets.shape[1:], mode="bilinear", align_corners=False)  # Resize to target size
                 loss = criterion(outputs, targets)
                 total_loss += loss.item()
                 
