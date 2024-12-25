@@ -133,7 +133,7 @@ def main():
         for images, targets in loader:
             images, targets = images.to(device), targets.squeeze(1).to(device)
             optimizer.zero_grad()
-            outputs = model(pixel_values=images).logits
+            outputs = model(images)
             outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
             loss = criterion(outputs, targets)
             loss.backward()
@@ -148,7 +148,7 @@ def main():
         with torch.no_grad():
             for images, targets in loader:
                 images, targets = images.to(device), targets.squeeze(1).to(device)
-                outputs = model(pixel_values=images).logits
+                outputs = model(images)
                 outputs = F.interpolate(outputs, size=targets.shape[-2:], mode='bilinear', align_corners=False)  # Resize to target size
                 loss = criterion(outputs, targets)
                 total_loss += loss.item()
@@ -209,16 +209,16 @@ def main():
             ckpt_epoch = epoch
             if os.path.exists(best_ckpt_path):
                 os.remove(best_ckpt_path)
-            best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
+            best_ckpt_path = os.path.join(args.save_dir, f"best_model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
             torch.save(model.state_dict(), best_ckpt_path)
             print(f"Best model saved at {best_ckpt_path}")
         if epoch % args.save_interval == 0:
-            checkpoint_path = os.path.join(args.save_dir, 'ckpt_interval', f"model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
+            checkpoint_path = os.path.join(args.save_dir, 'ckpt_interval', f"model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
             torch.save(model.state_dict(), checkpoint_path)
             print(f"Model periodically saved at {checkpoint_path}")
         if os.path.exists(last_ckpt_path):
             os.remove(last_ckpt_path)
-        last_ckpt_path = os.path.join(args.save_dir, f"last_model_epoch_{epoch}_iou_{avg_val_iou}_acc_{avg_val_acc}.pth")
+        last_ckpt_path = os.path.join(args.save_dir, f"last_model_epoch_{epoch}_iou_{val_iou}_acc_{val_acc}.pth")
         torch.save(model.state_dict(), last_ckpt_path)
         
         if epoch - ckpt_epoch > args.early_stop:
