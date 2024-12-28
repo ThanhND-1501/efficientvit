@@ -49,7 +49,7 @@ def main():
     data = transform({"image": data, "label": np.ones_like(data)})["image"]
 
     # Load the pretrained MobileViT-Small model from HuggingFace
-    config = MobileViTConfig.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model_type}-small")
+    config = MobileViTConfig.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model}-small")
     model = MobileViTForSemanticSegmentation.from_pretrained(
         f"apple/deeplabv3-mobilevit-{args.model}-small",
         config=config
