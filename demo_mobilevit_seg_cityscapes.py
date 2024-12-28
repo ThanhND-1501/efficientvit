@@ -69,7 +69,7 @@ def main():
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     with torch.inference_mode():
         data = torch.unsqueeze(data, dim=0).cuda()
-        output = model(data)
+        output = model(pixel_values=data).logits
         # resize the output to match the shape of the mask
         if output.shape[-2:] != image.shape[:2]:
             output = resize(output, size=image.shape[:2])
