@@ -6,7 +6,7 @@ import sys
 import cv2
 import numpy as np
 import torch
-from applications.efficientvit_seg.eval_efficientvit_seg_model import ADE20KDataset, CityscapesDataset, Resize, ToTensor, get_canvas
+from cityscapes_pt import CityscapesDataset, Resize, ToTensor, get_canvas
 from PIL import Image
 from torchvision import transforms
 
@@ -21,7 +21,7 @@ from efficientvit.seg_model_zoo import create_seg_model
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--image_path", type=str, default="assets/fig/indoor.jpg")
-    parser.add_argument("--dataset", type=str, default="cityscapes", choices=["cityscapes", "ade20k"])
+    parser.add_argument("--dataset", type=str, default="cityscapes", choices=["cityscapes"])
     parser.add_argument("--gpu", type=str, default="0")
     parser.add_argument("--crop_size", type=int, default=512)
     parser.add_argument("--model", type=str, default="b0")
@@ -40,28 +40,7 @@ def main():
                 ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
-        class_colors = CityscapesDataset.class_colors
-    elif args.dataset == "ade20k":
-        h, w = image.shape[:2]
-        if h < w:
-            th = args.crop_size
-            tw = math.ceil(w / h * th / 32) * 32
-        else:
-            tw = args.crop_size
-            th = math.ceil(h / w * tw / 32) * 32
-        if th != h or tw != w:
-            data = cv2.resize(
-                image,
-                dsize=(tw, th),
-                interpolation=cv2.INTER_CUBIC,
-            )
-
-        transform = transforms.Compose(
-            [
-                ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ]
-        )
-        class_colors = ADE20KDataset.class_colors
+        class_colors = CityscapesDataset.class_colors.values()
     else:
         raise NotImplementedError
     data = transform({"data": data, "label": np.ones_like(data)})["data"]

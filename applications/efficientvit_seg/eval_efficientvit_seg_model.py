@@ -111,19 +111,19 @@ class CityscapesDataset(Dataset):
         "road",
         "sidewalk",
         "building",
-        "wall",
-        "fence",
+        #"wall",
+        #"fence",
         "pole",
         "traffic light",
         "traffic sign",
         "vegetation",
-        "terrain",
+        #"terrain",
         "sky",
         "person",
         "rider",
         "car",
         "truck",
-        "bus",
+        #"bus",
         "train",
         "motorcycle",
         "bicycle",
@@ -132,19 +132,19 @@ class CityscapesDataset(Dataset):
         (128, 64, 128),
         (244, 35, 232),
         (70, 70, 70),
-        (102, 102, 156),
-        (190, 153, 153),
+        #(102, 102, 156),
+        #(190, 153, 153),
         (153, 153, 153),
         (250, 170, 30),
         (220, 220, 0),
         (107, 142, 35),
-        (152, 251, 152),
+        #(152, 251, 152),
         (70, 130, 180),
         (220, 20, 60),
         (255, 0, 0),
         (0, 0, 142),
         (0, 0, 70),
-        (0, 60, 100),
+        #(0, 60, 100),
         (0, 80, 100),
         (0, 0, 230),
         (119, 11, 32),
@@ -163,28 +163,28 @@ class CityscapesDataset(Dataset):
             -1,
             -1,
             2,  # building 11
-            3,  # wall 12
-            4,  # fence 13
+            2,  # wall 12
+            2,  # fence 13
             -1,
             -1,
             -1,
-            5,  # pole 17
+            3,  # pole 17
             -1,
-            6,  # traffic light 19
-            7,  # traffic sign 20
-            8,  # vegetation 21
-            9,  # terrain 22
-            10,  # sky 23
-            11,  # person 24
-            12,  # rider 25
-            13,  # car 26
-            14,  # truck 27
-            15,  # bus 28
+            4,  # traffic light 19
+            5,  # traffic sign 20
+            6,  # vegetation 21
+            6,  # terrain 22
+            7,  # sky 23
+            8,  # person 24
+            9,  # rider 25
+            10,  # car 26
+            11,  # truck 27
+            11,  # bus 28
             -1,
             -1,
-            16,  # train 31
-            17,  # motorcycle 32
-            18,  # bicycle 33
+            12,  # train 31
+            13,  # motorcycle 32
+            14,  # bicycle 33
         )
     )
 

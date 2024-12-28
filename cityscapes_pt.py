@@ -95,25 +95,16 @@ class CityscapesDataset(Dataset):
 
     label_map = np.array(
         (
-            16,
-            16,
-            16,
-            16,
-            16,
-            16,
-            16,
+            15, 15, 15, 15, 15, 15, 15,
             0,  # road 7
             1,  # sidewalk 8
-            16,
-            16,
+            15, 15,
             2,  # building 11
             2,  # wall 12
             2,  # fence 13
-            16,
-            16,
-            16,
+            15, 15, 15,
             3,  # pole 17
-            16,
+            15,
             4,  # traffic light 19
             5,  # traffic sign 20
             6,  # vegetation 21
@@ -123,31 +114,30 @@ class CityscapesDataset(Dataset):
             9,  # rider 25
             10,  # car 26
             11,  # truck 27
-            12,  # bus 28
-            16,
-            16,
-            13,  # train 31
-            14,  # motorcycle 32
-            15,  # bicycle 33
+            11,  # bus 28
+            15, 15,
+            12,  # train 31
+            13,  # motorcycle 32
+            14,  # bicycle 33
         )
     )
     
     class_color = {'road': (128, 64, 128),
                'sidewalk': (244, 35, 232),
                'building': (70, 70, 70),
-               'wall': (102, 102, 156),
-               'fence': (190, 153, 153),
+               #'wall': (102, 102, 156),
+               #'fence': (190, 153, 153),
                'pole': (153, 153, 153),
                'traffic light': (250, 170, 30),
                'traffic sign': (220, 220, 0),
                'vegetation': (107, 142, 35),
-               'terrain': (152, 251, 152),
+               #'terrain': (152, 251, 152),
                'sky': (70, 130, 180),
                'person': (220, 20, 60),
                'rider': (255, 0, 0),
                'car': (0, 0, 142),
                'truck': (0, 0, 70),
-               'bus': (0, 60, 100),
+               #'bus': (0, 60, 100),
                'train': (0, 80, 100),
                'motorcycle': (0, 0, 230),
                'bicycle': (119, 11, 32)}
