@@ -4,10 +4,8 @@ import os
 import sys
 
 import cv2
-import torch.nn as nn
 import numpy as np
 import torch
-#from applications.efficientvit_seg.eval_efficientvit_seg_model import CityscapesDataset, Resize, ToTensor, get_canvas
 from cityscapes_pt import CityscapesDataset, Resize, ToTensor, get_canvas
 from PIL import Image
 from time import time
@@ -22,22 +20,25 @@ from efficientvit.models.utils import resize
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", type=str, default="assets/fig/indoor.jpg")
-    parser.add_argument("--dataset", type=str, default="cityscapes", choices=["cityscapes", "ade20k"])
+    parser.add_argument("--video_path", type=str, default="assets/video/sample_video.mp4")
+    parser.add_argument("--dataset", type=str, default="cityscapes", choices=["cityscapes"])
     parser.add_argument("--gpu", type=str, default="0")
     parser.add_argument("--crop_size", type=int, default=512)
     parser.add_argument("--model", type=str, default="x")
     parser.add_argument("--weight_url", type=str, default=None)
-    parser.add_argument("--output_path", type=str, default=".demo/mobilevit_seg_demo.png")
+    parser.add_argument("--output_path", type=str, default=".demo/mobilevit_seg_demo.mp4")
 
     args = parser.parse_args()
+    os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     NUM_CLASSES = 16
     LOGS = "mobilevit.log"
 
-    image = np.array(Image.open(args.image_path).convert("RGB"))
-    data = image
+    cap = cv2.VideoCapture(args.video_path)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(args.output_path, fourcc, 30.0, (int(cap.get(3)), int(cap.get(4))))
+
     if args.dataset == "cityscapes":
         transform = transforms.Compose(
             [
@@ -67,21 +68,32 @@ def main():
     model.to(DEVICE)
     model.eval()
 
-    os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
-    with torch.inference_mode():
-        data = torch.unsqueeze(data, dim=0).cuda()
-        start = time()
-        output = model(pixel_values=data).logits
-        end = time() - start
-        with open(LOGS, "a") as f:
-            f.write(f"\nRunning time: {end} (s)")
-        # resize the output to match the shape of the mask
-        if output.shape[-2:] != image.shape[:2]:
-            output = resize(output, size=image.shape[:2])
-        output = torch.argmax(output, dim=1).cpu().numpy()[0]
-        canvas = get_canvas(image, output, class_colors)
-        canvas = Image.fromarray(canvas).save(args.output_path)
+    total_time = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
 
+        image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        data = transform({"image": image, "label": np.ones_like(image)})["image"]
+
+        with torch.inference_mode():
+            data = torch.unsqueeze(data, dim=0).cuda()
+            start = time()
+            output = model(pixel_values=data).logits
+            end = time() - start
+            total_time += end
+            if output.shape[-2:] != image.shape[:2]:
+                output = resize(output, size=image.shape[:2])
+            output = torch.argmax(output, dim=1).cpu().numpy()[0]
+            canvas = get_canvas(image, output, class_colors)
+            canvas = cv2.cvtColor(canvas, cv2.COLOR_RGB2BGR)
+            out.write(canvas)
+    with open(LOGS, "a") as f:
+        f.write(f"\nRunning time: {total_time} (s)")
+
+    cap.release()
+    out.release()
 
 if __name__ == "__main__":
     main()

@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--output_path", type=str, default=".demo/efficientvit_seg_demo.mp4")
 
     args = parser.parse_args()
+    os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     LOGS = "efficientvit.log"
 
