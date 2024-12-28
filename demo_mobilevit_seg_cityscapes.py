@@ -51,7 +51,7 @@ def main():
     # Load the pretrained MobileViT-Small model from HuggingFace
     config = MobileViTConfig.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model_type}-small")
     model = MobileViTForSemanticSegmentation.from_pretrained(
-        f"apple/deeplabv3-mobilevit-{args.model_type}-small",
+        f"apple/deeplabv3-mobilevit-{args.model}-small",
         config=config
     )
     if model.config.num_labels != NUM_CLASSES:
