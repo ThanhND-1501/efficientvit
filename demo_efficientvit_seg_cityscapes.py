@@ -43,7 +43,7 @@ def main():
         class_colors = CityscapesDataset.class_color.values()
     else:
         raise NotImplementedError
-    data = transform({"image": data, "label": np.ones_like(data)})["data"]
+    data = transform({"image": data, "label": np.ones_like(data)})["image"]
 
     model = create_seg_model(args.model, weight_url=args.weight_url).cuda()
     model.eval()
