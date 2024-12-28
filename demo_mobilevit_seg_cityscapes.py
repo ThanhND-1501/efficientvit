@@ -4,6 +4,7 @@ import os
 import sys
 
 import cv2
+import torch.nn as nn
 import numpy as np
 import torch
 #from applications.efficientvit_seg.eval_efficientvit_seg_model import CityscapesDataset, Resize, ToTensor, get_canvas
@@ -17,8 +18,6 @@ ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
 sys.path.append(ROOT_DIR)
 
 from efficientvit.models.utils import resize
-from efficientvit.seg_model_zoo import create_seg_model
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -33,6 +32,7 @@ def main():
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    NUM_CLASSES = 16
 
     image = np.array(Image.open(args.image_path).convert("RGB"))
     data = image
@@ -46,7 +46,7 @@ def main():
         class_colors = CityscapesDataset.class_colors
     else:
         raise NotImplementedError
-    data = transform({"data": data, "label": np.ones_like(data)})["data"]
+    data = transform({"image": data, "label": np.ones_like(data)})["image"]
 
     # Load the pretrained MobileViT-Small model from HuggingFace
     config = MobileViTConfig.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model_type}-small")
@@ -54,6 +54,15 @@ def main():
         f"apple/deeplabv3-mobilevit-{args.model_type}-small",
         config=config
     )
+    if model.config.num_labels != NUM_CLASSES:
+        model.segmentation_head.classifier = nn.Conv2d(
+            in_channels=model.segmentation_head.classifier.convolution.in_channels,
+            out_channels=NUM_CLASSES,
+            kernel_size=1
+        ).to(DEVICE)
+        model.config.num_labels = NUM_CLASSES
+    model.load_state_dict(torch.load(args.weight_url))
+    
     model.to(DEVICE)
     model.eval()
 
