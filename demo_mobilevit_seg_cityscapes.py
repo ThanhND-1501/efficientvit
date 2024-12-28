@@ -10,6 +10,7 @@ import torch
 #from applications.efficientvit_seg.eval_efficientvit_seg_model import CityscapesDataset, Resize, ToTensor, get_canvas
 from cityscapes_pt import CityscapesDataset, Resize, ToTensor, get_canvas
 from PIL import Image
+from time import time
 from torchvision import transforms
 from transformers import MobileViTConfig, MobileViTForSemanticSegmentation
 
@@ -33,6 +34,7 @@ def main():
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     NUM_CLASSES = 16
+    LOGS = "mobilevit.log"
 
     image = np.array(Image.open(args.image_path).convert("RGB"))
     data = image
@@ -69,7 +71,11 @@ def main():
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     with torch.inference_mode():
         data = torch.unsqueeze(data, dim=0).cuda()
+        start = time()
         output = model(pixel_values=data).logits
+        end = time() - start
+        with open(LOGS, "a") as f:
+            f.write(f"\nRunning time: {end} (s)")
         # resize the output to match the shape of the mask
         if output.shape[-2:] != image.shape[:2]:
             output = resize(output, size=image.shape[:2])

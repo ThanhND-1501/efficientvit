@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from cityscapes_pt import CityscapesDataset, Resize, ToTensor, get_canvas
 from PIL import Image
+from time import time
 from torchvision import transforms
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -30,6 +31,7 @@ def main():
 
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    LOGS = "efficientvit.log"
 
     image = np.array(Image.open(args.image_path).convert("RGB"))
     data = image
@@ -51,7 +53,11 @@ def main():
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     with torch.inference_mode():
         data = torch.unsqueeze(data, dim=0).cuda()
+        start = time()
         output = model(data)
+        end = time() - start
+        with open(LOGS, "a") as f:
+            f.write(f"\nRunning time: {end} (s)")
         # resize the output to match the shape of the mask
         if output.shape[-2:] != image.shape[:2]:
             output = resize(output, size=image.shape[:2])
