@@ -43,7 +43,7 @@ def main():
                 ToTensor(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )
-        class_colors = CityscapesDataset.class_colors
+        class_colors = CityscapesDataset.class_color.values()
     else:
         raise NotImplementedError
     data = transform({"image": data, "label": np.ones_like(data)})["image"]
