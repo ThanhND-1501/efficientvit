@@ -48,6 +48,7 @@ def main():
         class_colors = CityscapesDataset.class_color.values()
     else:
         raise NotImplementedError
+    data = transform({"image": data, "label": np.ones_like(data)})["image"]
 
     # Load the pretrained MobileViT-Small model from HuggingFace
     config = MobileViTConfig.from_pretrained(f"apple/deeplabv3-mobilevit-{args.model}-small")

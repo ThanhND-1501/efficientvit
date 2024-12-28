@@ -4,6 +4,7 @@ import os
 import sys
 
 import cv2
+import torch.nn as nn
 import numpy as np
 import torch
 from cityscapes_pt import CityscapesDataset, Resize, ToTensor, get_canvas
